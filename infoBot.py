@@ -7,6 +7,7 @@ import time
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib import style
+import random
 from Crypto import Random
 import hashlib
 import hmac
@@ -70,15 +71,32 @@ async def user_metrics_background_task():
             await asyncio.sleep(5)
 
         
-class BotCrypto: # Massive shoutout to @Nanibongwa on Discord for this implementation.
+class BotCrypto: # Massive shoutout to @Nanibongwa on Discord/nsk89 on GitHub for this implementation.
     def generate_password(self, length):
         # generate random bytes and hash returned data
         password = self.hash_data(Random.get_random_bytes(length))
         secret = self.hash_data(Random.get_random_bytes(length))
         # create secure hmac'd hash password
         hmac_pass = base64.b64encode(hmac.new(password, secret, hashlib.sha3_384).digest())
-    
-        return hmac_pass[:length].decode()
+
+        return self.symbol_insert(hmac_pass[:length].decode())
+
+    def symbol_insert(self, passphrase):
+        # list of symbols to choose from
+        symbol_list = ['!', '@', '#', '$', '%', '^', '&' '*', '(', ')', '+', '=', '_']
+        # define the amount of symbols to use in a given string based on length >= 8
+        symbol_count = round(len(passphrase) / 4)
+        count = 0
+        while count < symbol_count:  # pick random symbols based on int chosen and append it to passphrase
+            rand_int = random.randrange(0, len(symbol_list))
+            passphrase += symbol_list[rand_int]
+            count += 1
+
+        passphrase = [char for char in passphrase]  # no delimiter, no .split(). list comprehension to split characters
+        random.shuffle(passphrase)  # Pycrypdome shuffle, shuffle the list elements around
+        passphrase = ''.join(passphrase)  # rejoin the list into the passphrase string
+
+        return passphrase
 
     def hash_data(self, data):  # convert data to hash
         data = self.check_for_bytes(data)
@@ -119,6 +137,10 @@ async def on_message(message, *args):
     !user_info - Get user count.\n\
     !ports - Show a list of common ports.\n\
     !user_analysis - Show a graph of activity.```")
+
+
+    elif "!qa" == message.content.lower(): # Need to find a cleaner way to do this.
+        await message.channel.send("**How to hack [insert social media]?** \nDon't! That isn't why we made the server. But if you want to learn from a security point of view, google these things: Phishing, Keyloggers, MiTM, session hijacking, cookie stealing. \n\n**How do I start hacking?** \nThere are a lot of resources, here a few: https://www.hacker101.com, https://bit.ly/2PLuDv4 \n\n**What is the link for Kali Linux?** \nhttps://www.kali.org \n\n**Wi-Fi Hacking?** \nLook on Google for stuff like Aircrack-ng. \n\n**What is Tor?** \nTor (The Onion Router).  It was originally developed with the U.S. Navy in mind, for the primary purpose of protecting government communications. Today, it is used every day for a wide variety of purposes by the military, journalists, law enforcement officers, activists, and many others. Here are some of the specific uses we've seen or recommend.\n\n**How do I use Tor?** \nGoogle it ;) \n\n**What is a CTF? How do I start?** \nhttps://www.ctf101.org")
 
 
     elif "!ports" == message.content.lower(): # Shows a list of common ports. Going to make it into a search.
