@@ -5,15 +5,12 @@ import asyncio
 from discord.ext.commands import Bot
 import time
 import pandas as pd
-import matplotlib.pyplot as plt
-from matplotlib import style
 import random
 from Crypto import Random
 import hashlib
 import hmac
 import base64 
 
-style.use("fivethirtyeight")
 
 client = discord.Client()
 token = open("token.txt", "r").read()
@@ -31,44 +28,33 @@ text_ports = {v: k for k, v in num_ports.items()} # Reversed list of ports
 def community_report(guild):
     online = 0
     idle = 0
+    dnd = 0
     offline = 0
 
     for member in guild.members: # Go through members in the server
         if str(member.status) == "online":
             online += 1
-        if str(member.status) == "offline":
-            offline += 1
-        elif str(member.status) == "idle" or str(member.status) == "dnd":
+
+        elif str(member.status) == "idle":
             idle += 1
+        
+        elif str(member.status) == "dnd":
+            dnd += 1
 
-    return online, idle, offline
+        elif str(member.status) == "offline":
+            offline += 1
+
+        else:
+            print(str(member.status))
 
 
-async def user_metrics_background_task():
-    await client.wait_until_ready()
-    guild = client.get_guild(509992354543960064)
+    total = guild.member_count
+    online_p = (online / total) * 100
+    idle_p = (idle / total) * 100
+    dnd_p = (dnd / total) * 100
+    offline_p = (offline / total) * 100
 
-    while not client.is_closed():
-        try:
-            online, idle, offline = community_report(guild) # Get the data
-            with open("usermetrics.csv","a") as f:
-                f.write(f"{int(time.time())},{online},{idle},{offline}\n") # Put data in CSV file
-
-            plt.clf()
-            df = pd.read_csv("usermetrics.csv", names = ['time', 'online', 'idle', 'offline']) # Read CSV file
-            df['date'] = pd.to_datetime(df['time'],unit = 's')
-            df['total'] = df['online'] + df['offline'] + df['idle']
-            df.drop("time", 1,  inplace = True)
-            df.set_index("date", inplace = True)
-            df['online'].plot(), df['offline'].plot(), df['idle'].plot() # Map data onto the grapgh
-            plt.legend()
-            plt.savefig("online.png") # Save graph as image
-
-            await asyncio.sleep(30)
-
-        except Exception as e:
-            print(str(e))
-            await asyncio.sleep(5)
+    return total, online, online_p, idle, idle_p, dnd, dnd_p, offline, offline_p
 
         
 class BotCrypto: # Massive shoutout to @Nanibongwa on Discord/nsk89 on GitHub for this implementation.
@@ -130,21 +116,29 @@ async def on_message(message, *args):
 
 
     elif "!help" == message.content.lower(): # Command to list commands
-        await message.channel.send("```\
-    !help - Show this message\n\
-    !clear - Delete channel messages up to 14 days old.\n\
-    !passgen x - Password generator between 8 - 32 chars (x being the length you want the password)\n\
-    !user_info - Get user count.\n\
-    !ports - Show a list of common ports.\n\
-    !user_analysis - Show a graph of activity.```")
+        await message.channel.send("```!help - Show this message \n!qa - Shows common questions with answers \n!clear x - Delete channel messages. (x being number of messages to delete) \n!passgen x - Password generator between 8 - 32 chars. (x being the length you want the password) \n!user_info - Get user count. \n!ports x - Show a list of common ports. (x being the port number. If no port is given it will send the whole list)\n```")
 
 
     elif "!qa" == message.content.lower(): # Need to find a cleaner way to do this.
         await message.channel.send("**How to hack [insert social media]?** \nDon't! That isn't why we made the server. But if you want to learn from a security point of view, google these things: Phishing, Keyloggers, MiTM, session hijacking, cookie stealing. \n\n**How do I start hacking?** \nThere are a lot of resources, here a few: https://www.hacker101.com, https://bit.ly/2PLuDv4 \n\n**What is the link for Kali Linux?** \nhttps://www.kali.org \n\n**Wi-Fi Hacking?** \nLook on Google for stuff like Aircrack-ng. \n\n**What is Tor?** \nTor (The Onion Router).  It was originally developed with the U.S. Navy in mind, for the primary purpose of protecting government communications. Today, it is used every day for a wide variety of purposes by the military, journalists, law enforcement officers, activists, and many others. Here are some of the specific uses we've seen or recommend.\n\n**How do I use Tor?** \nGoogle it ;) \n\n**What is a CTF? How do I start?** \nhttps://www.ctf101.org")
 
 
-    elif "!ports" == message.content.lower(): # Shows a list of common ports. Going to make it into a search.
-        await message.channel.send(f"```py\nCommon Ports: \n{pd.DataFrame.from_dict(text_ports, orient = 'index')}```")
+    elif message.content.startswith("!ports"): # Ports list and search.
+        try:
+            args = message.content.split(" ")[1]
+            port = int(args)
+
+            if port in num_ports:
+                await message.channel.send(f"```py\nPort {port}:\n{num_ports[port]}```")
+
+            elif port not in num_ports:
+                await message.channel.send("Error, not a common port. Sorry!")
+
+        except ValueError:
+            await message.channel.send("Error, port has to be an integer!")
+
+        except IndexError:
+            await message.channel.send(f"```py\nCommon Ports:\n{pd.DataFrame.from_dict(text_ports, orient = 'index')}```")
 
 
     elif message.content.startswith("!passgen"): # Password generator
@@ -168,7 +162,15 @@ async def on_message(message, *args):
             await message.author.send(f'Your password is: {password}')
 
 
-    elif "!clear" == message.content.lower(): # Delete all messages (Need to implement number of messages to delete)
+    elif message.content.startswith("!clear"): # Delete messages (Needs an int as input)
+        args = message.content.split(" ")[1]
+
+        try:
+            limit = int(args) # Check if input is an int
+
+        except ValueError:
+            await message.channel.send("Error, not a valid input!")
+
         counter = 0
         messages = []
         channel = message.channel
@@ -176,8 +178,11 @@ async def on_message(message, *args):
         # Need to add date check
 
         async for message in message.channel.history(): # Go through messages in channel
-            counter += 1
-            messages.append(message) # Add message to list
+            if counter < limit:
+                counter += 1
+                messages.append(message) # Add message to list
+            else:
+                pass
 
         await channel.delete_messages(messages) # Delete messages from list
 
@@ -190,14 +195,8 @@ async def on_message(message, *args):
 
 
     elif "!user_info" == message.content.lower(): # Gives server info
-        online, idle, offline = community_report(guild)
-        await message.channel.send(f"```py\nTotal Users: {guild.member_count}\n    Online: {online}\n    Idle/busy/dnd: {idle}\n    Offline: {offline}```")
+        total, online, online_p, idle, idle_p, dnd, dnd_p, offline, offline_p = community_report(guild)
+        await message.channel.send(f"```py\nTotal Users: {total} \nOnline: {int(online)} | {online_p}% \nIdle: {int(idle)} | {idle_p} \ndnd: {int(dnd)} | {dnd_p} \nOffline: {int(offline)} | {offline_p}%```")     
 
 
-    elif "!user_analysis" == message.content.lower(): # Sends a graph of user activity
-        file = discord.File("online.png", filename = "online.png")
-        await message.channel.send("User Analysis", file = file)
-
-
-client.loop.create_task(user_metrics_background_task())
 client.run(token)
