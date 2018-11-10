@@ -7,7 +7,6 @@ import time
 import pandas as pd
 import random
 from Crypto import Random
-from Crypto.Random import random
 import hashlib
 import hmac
 import base64 
@@ -57,7 +56,7 @@ def community_report(guild):
 
     return total, online, online_p, idle, idle_p, dnd, dnd_p, offline, offline_p
 
-
+        
 class BotCrypto: # Massive shoutout to @Nanibongwa on Discord/nsk89 on GitHub for this implementation.
     def generate_password(self, length):
         # generate random bytes and hash returned data
@@ -199,6 +198,5 @@ async def on_message(message, *args):
         total, online, online_p, idle, idle_p, dnd, dnd_p, offline, offline_p = community_report(guild)
         await message.channel.send(f"```py\nTotal Users: {total} \nOnline: {int(online)} | {online_p}% \nIdle: {int(idle)} | {idle_p} \ndnd: {int(dnd)} | {dnd_p} \nOffline: {int(offline)} | {offline_p}%```")     
 
-                                       
-client.loop.create_task(user_metrics_background_task())
+
 client.run(token)
