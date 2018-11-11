@@ -5,7 +5,6 @@ import asyncio
 from discord.ext.commands import Bot
 import time
 import pandas as pd
-import random
 from Crypto import Random
 import hashlib
 import hmac
@@ -21,6 +20,7 @@ guild = client.get_guild(509992354543960064)
 num_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", # List of ports
          53: "DNS", 67: "DHCP Server", 68: "DHCP Client",
          80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS"}
+
 text_ports = {v: k for k, v in num_ports.items()} # Reversed list of ports
 
 
@@ -73,12 +73,12 @@ class BotCrypto: # Massive shoutout to @Nanibongwa on Discord/nsk89 on GitHub fo
         symbol_count = round(len(passphrase) / 4)
         count = 0
         while count < symbol_count:  # pick random symbols based on int chosen and append it to passphrase
-            rand_int = random.randrange(0, len(symbol_list))
+            rand_int = Random.random.randrange(0, len(symbol_list))
             passphrase += symbol_list[rand_int]
             count += 1
 
         passphrase = [char for char in passphrase]  # no delimiter, no .split(). list comprehension to split characters
-        random.shuffle(passphrase)  # Pycrypdome shuffle, shuffle the list elements around
+        Random.random.shuffle(passphrase)  # Pycrypdome shuffle, shuffle the list elements around
         passphrase = ''.join(passphrase)  # rejoin the list into the passphrase string
 
         return passphrase
