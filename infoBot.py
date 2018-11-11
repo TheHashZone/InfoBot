@@ -20,8 +20,7 @@ guild = client.get_guild(509992354543960064)
 
 num_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", # List of ports
          53: "DNS", 67: "DHCP Server", 68: "DHCP Client",
-         80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS",                # Need both for the port search later.
-         }
+         80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS"}
 text_ports = {v: k for k, v in num_ports.items()} # Reversed list of ports
 
 
@@ -163,10 +162,13 @@ async def on_message(message, *args):
 
 
     elif message.content.startswith("!clear"): # Delete messages (Needs an int as input)
-        args = message.content.split(" ")[1]
+        try:
+            args = message.content.split(" ")[1]
+        except IndexError:
+            await message.channel.send("Error, You need to enter a number of messages!")
 
         try:
-            limit = int(args) # Check if input is an int
+            limit = int(args) + 1 # Check if input is an int and then add 1 to count the !clear message.
 
         except ValueError:
             await message.channel.send("Error, not a valid input!")
