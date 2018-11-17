@@ -19,7 +19,11 @@ guild = client.get_guild(509992354543960064)
 
 num_ports = {21: "FTP", 22: "SSH", 23: "Telnet", 25: "SMTP", # List of ports
          53: "DNS", 67: "DHCP Server", 68: "DHCP Client",
-         80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS"}
+         80: "HTTP", 110: "POP3", 143: "IMAP", 443: "HTTPS",
+         3306: "MySQL/MariaDB (TCP)", 1433: "SQL Database Engine (TCP)", 1434: "SQL Browser Service (UDP)",
+         3050: "Firebird/Interbase (TCP)", 5432: "PostgreSQL (TCP)", 3351: "Pervasive SQL (TCP)", 1583: "Pervasive SQL (TCP)",
+         137: "Pervasive SQL Named Pipe Authentication (TCP/UDP)",  138: "Pervasive SQL Named Pipe Authentication (TCP/UDP)",
+         139: "Pervasive SQL Named Pipe Authentication (TCP/UDP)", 3389: "RDP", 8080: "HTTP"}
 
 text_ports = {v: k for k, v in num_ports.items()} # Reversed list of ports
 
